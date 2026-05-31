@@ -113,13 +113,6 @@ case 'self': {
                 }
             }
 
-            if (budy.startsWith('$')) {
-                if (!isOwner) return;
-                require("child_process").exec(budy.slice(2), (err, stdout) => {
-                    if (err) return m.reply(`${err}`);
-                    if (stdout) return m.reply(stdout);
-                });
-            }
     }
 };
 //================= { WARNING } =================\\
