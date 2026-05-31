@@ -24,6 +24,7 @@ require('../src/discord');
 */
 //================= { LIBRARY } =================\\
 const fs = require('fs');
+const crypto = require('crypto');
 const pino = require('pino');
 const path = require('path');
 const axios = require('axios');
@@ -164,17 +165,62 @@ async function keyoptions(url, options) {
 const loginInfoPath = path.join(__dirname, '../loginInfo.json');
 let usePairingCode = false;
 
+const ENCRYPTION_KEY = process.env.LOGIN_CACHE_KEY
+    ? crypto.createHash('sha256').update(process.env.LOGIN_CACHE_KEY).digest()
+    : crypto.createHash('sha256').update('RaolLatestX-default-key').digest();
+const IV_LENGTH = 16;
+
 //================= { HELPER FUNCTIONS } =================\\
+function encrypt(text) {
+    const iv = crypto.randomBytes(IV_LENGTH);
+    const cipher = crypto.createCipheriv('aes-256-cbc', ENCRYPTION_KEY, iv);
+    let encrypted = cipher.update(text, 'utf8');
+    encrypted = Buffer.concat([encrypted, cipher.final()]);
+    return iv.toString('hex') + ':' + encrypted.toString('hex');
+}
+
+function decrypt(text) {
+    try {
+        const textParts = text.split(':');
+        if (textParts.length !== 2) return null;
+        const iv = Buffer.from(textParts.shift(), 'hex');
+        const encryptedText = Buffer.from(textParts.join(':'), 'hex');
+        const decipher = crypto.createDecipheriv('aes-256-cbc', ENCRYPTION_KEY, iv);
+        let decrypted = decipher.update(encryptedText);
+        decrypted = Buffer.concat([decrypted, decipher.final()]);
+        return decrypted.toString('utf8');
+    } catch (e) {
+        return null;
+    }
+}
+
 function saveLoginInfo(username, password, usePairingCode) {
-    const loginInfo = { username, password, usePairingCode };
-    fs.writeFileSync(loginInfoPath, JSON.stringify(loginInfo));
+    const loginInfo = JSON.stringify({ username, password, usePairingCode });
+    const encryptedData = encrypt(loginInfo);
+    fs.writeFileSync(loginInfoPath, JSON.stringify({ data: encryptedData }));
 }
 
 function getSavedLoginInfo() {
     if (fs.existsSync(loginInfoPath)) {
-        const loginInfo = JSON.parse(fs.readFileSync(loginInfoPath));
-        usePairingCode = loginInfo.usePairingCode;
-        return loginInfo;
+        const rawData = fs.readFileSync(loginInfoPath);
+        try {
+            const json = JSON.parse(rawData);
+            if (json.data) {
+                const decrypted = decrypt(json.data);
+                if (decrypted) {
+                    const loginInfo = JSON.parse(decrypted);
+                    usePairingCode = loginInfo.usePairingCode;
+                    return loginInfo;
+                }
+            } else if (json.username && json.password) {
+                // Migration: automatically encrypt plaintext data
+                saveLoginInfo(json.username, json.password, json.usePairingCode);
+                usePairingCode = json.usePairingCode;
+                return json;
+            }
+        } catch (e) {
+            console.error(chalk.red('Error reading login info:', e.message));
+        }
     }
     return null;
 }
