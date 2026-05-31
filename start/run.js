@@ -131,7 +131,7 @@ const ytdl = require("ytdl-core");
 const colors = require('@colors/colors/safe');
 const chalk = require('chalk');
 const { getFileFromGithub, updateFileOnGithub } = require("./lib/github");
-const { toPTT, toAudio } = require("./lib/converter");
+const { toAudio } = require("./lib/converter");
 const from = m.key.remoteJid;
 const isGroup = from.endsWith("@g.us");
 
