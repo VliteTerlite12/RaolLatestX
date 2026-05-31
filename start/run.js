@@ -186,12 +186,14 @@ module.exports = RaolLatestX = async (RaolLatestX, m, chatUpdate, store) => {
         const isMedia = /image|video|sticker|audio/.test(mime);
 
         //================= { USER } =================\\
-        var isAuthor = global.ownNumb.replace(/[^0-9]/g, '').includes(m.sender.split("@")[0]);
+        const owners = (typeof global.ownNumb === 'string' ? global.ownNumb.split(',') : (Array.isArray(global.ownNumb) ? global.ownNumb : [])).map(v => v.replace(/[^0-9]/g, '')).filter(v => v.length > 0);
         const botNumber = await RaolLatestX.decodeJid(RaolLatestX.user.id);
-        const globalelit = `${global.ownNumb}@s.whatsapp.net`;
-        const isOwner = globalelit.includes(m.sender);
+        const senderNumber = m.sender.split('@')[0];
+
+        var isAuthor = owners.includes(senderNumber);
+        const isOwner = owners.map(v => v + '@s.whatsapp.net').includes(m.sender);
         const itsMe = m.sender === botNumber ? true : false;
-        const isCreator = [botNumber, ...global.ownNumb].map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net').includes(m.sender);
+        const isCreator = [botNumber.split('@')[0], ...owners].map(v => v + '@s.whatsapp.net').includes(m.sender);
 
         //================= { GROUP } =================\\
         const groupMetadata = m.isGroup ? await RaolLatestX.groupMetadata(m.chat).catch(() => null) : null;

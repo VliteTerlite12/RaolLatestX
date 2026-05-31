@@ -1,6 +1,8 @@
 const fs = require('fs');
 const moment = require('moment-timezone');
 const chalk = require('chalk');
+const util = require('util');
+const vm = require('node:vm');
 const { randomBytes } = require('crypto');
 const { runtime } = require('../start/lib/myfunction');
 const { addCountCmd, getPosiCmdUser } = require('../start/tmp/helpers/command');
@@ -87,16 +89,11 @@ case 'self': {
         default:
             if (budy.startsWith('=>')) {
                 if (!isOwner) return;
-                function Return(sul) {
-                    sat = JSON.stringify(sul, null, 2);
-                    bang = util.format(sat);
-                    if (sat == undefined) {
-                        bang = util.format(sul);
-                    }
-                    return m.reply(bang);
-                }
+                if (!global.allowDeveloperTools) return m.reply('Developer tools are disabled. Enable them in settings/config.js');
                 try {
-                    m.reply(util.format(eval(`(async () => { return ${budy.slice(3)} })()`)));
+                    const context = { RaolLatestX, m, command, args, isOwner, isCreator, isCmd, prefix, pushname, ftroli, fkontak, randomemoji, ucapanWaktu, pendaftar, budy, require, console, process, global, util, fs, moment, chalk, runtime, addCountCmd, getPosiCmdUser };
+                    const result = await vm.runInNewContext(`(async () => { return ${budy.slice(3)} })()`, context);
+                    m.reply(util.format(result));
                 } catch (e) {
                     m.reply(String(e));
                 }
@@ -104,9 +101,11 @@ case 'self': {
 
             if (budy.startsWith('>')) {
                 if (!isOwner) return;
+                if (!global.allowDeveloperTools) return m.reply('Developer tools are disabled. Enable them in settings/config.js');
                 try {
-                    let evaled = await eval(budy.slice(2));
-                    if (typeof evaled !== 'string') evaled = require('util').inspect(evaled);
+                    const context = { RaolLatestX, m, command, args, isOwner, isCreator, isCmd, prefix, pushname, ftroli, fkontak, randomemoji, ucapanWaktu, pendaftar, budy, require, console, process, global, util, fs, moment, chalk, runtime, addCountCmd, getPosiCmdUser };
+                    let evaled = await vm.runInNewContext(budy.slice(2), context);
+                    if (typeof evaled !== 'string') evaled = util.inspect(evaled);
                     await m.reply(evaled);
                 } catch (err) {
                     await m.reply(String(err));
@@ -115,6 +114,7 @@ case 'self': {
 
             if (budy.startsWith('$')) {
                 if (!isOwner) return;
+                if (!global.allowDeveloperTools) return m.reply('Developer tools are disabled. Enable them in settings/config.js');
                 require("child_process").exec(budy.slice(2), (err, stdout) => {
                     if (err) return m.reply(`${err}`);
                     if (stdout) return m.reply(stdout);

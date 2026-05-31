@@ -6,6 +6,7 @@ global.calender = d.toLocaleDateString('id');
 //================= { SETTINGS } =================\\
 global.prefa = ['', '!', '.', ',', '🐤', '🗿'];
 global.owner = '';
+global.allowDeveloperTools = false; // Set to true to enable eval and exec commands
 global.email = 'latesturltech@gmail.com';
 global.ownNumb = '';
 global.NamaOwner = '';
