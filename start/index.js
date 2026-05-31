@@ -671,12 +671,13 @@ async function RaolLatestXStart() {
         let mime = (message.msg || message).mimetype || ''
         let messageType = message.mtype ? message.mtype.replace(/Message/gi, '') : mime.split('/')[0]
         const stream = await downloadContentFromMessage(quoted, messageType)
-        let buffer = Buffer.from([])
+        let chunks = []
         for await (const chunk of stream) {
-            buffer = Buffer.concat([buffer, chunk])
+            chunks.push(chunk)
         }
+        let buffer = Buffer.concat(chunks)
         let type = await FileType.fromBuffer(buffer)
-        trueFileName = attachExtension ? (filename + '.' + type.ext) : filename
+        let trueFileName = attachExtension ? (filename + '.' + type.ext) : filename
         // save to file
         await fs.writeFileSync(trueFileName, buffer)
         return trueFileName
@@ -686,12 +687,12 @@ async function RaolLatestXStart() {
         let mime = (message.msg || message).mimetype || ''
         let messageType = message.mtype ? message.mtype.replace(/Message/gi, '') : mime.split('/')[0]
         const stream = await downloadContentFromMessage(message, messageType)
-        let buffer = Buffer.from([])
+        let chunks = []
         for await (const chunk of stream) {
-            buffer = Buffer.concat([buffer, chunk])
+            chunks.push(chunk)
         }
 
-        return buffer
+        return Buffer.concat(chunks)
     }
     RaolLatestX.sendMedia = async (jid, path, fileName = '', caption = '', quoted = '', options = {}) => {
         let types = await RaolLatestX.getFile(path, true)
