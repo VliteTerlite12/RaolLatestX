@@ -132,6 +132,10 @@ const colors = require('@colors/colors/safe');
 const chalk = require('chalk');
 const { getFileFromGithub, updateFileOnGithub } = require("./lib/github");
 const { toPTT, toAudio } = require("./lib/converter");
+const jimp = require('jimp');
+const cron = require('node-cron');
+const caseHandler = require('../case/case');
+
 const from = m.key.remoteJid;
 const isGroup = from.endsWith("@g.us");
 
@@ -212,7 +216,6 @@ module.exports = RaolLatestX = async (RaolLatestX, m, chatUpdate, store) => {
         const isPremium = isCreator || isCreator || checkPremiumUser(m.sender, userPrem);
 
         //================= { TIME } =================\\
-        const moment = require('moment-timezone')
         const time2 = moment().tz("Asia/Jakarta").format("HH:mm:ss")
         let ucapanWaktu;
 
@@ -251,14 +254,12 @@ module.exports = RaolLatestX = async (RaolLatestX, m, chatUpdate, store) => {
 
         const reSize = async (buffer, ukur1, ukur2) => {
             return new Promise(async (resolve, reject) => {
-                let jimp = require('jimp')
                 var baper = await jimp.read(buffer);
                 var ab = await baper.resize(ukur1, ukur2).getBufferAsync(jimp.MIME_JPEG)
                 resolve(ab)
             })
         }
         const fkethmb = await reSize(ppuser, 300, 300)
-        let jimp = require("jimp")
         const resize = async (image, width, height) => {
             const read = await jimp.read(image);
             const data = await read.resize(width, height).getBufferAsync(jimp.MIME_JPEG);
@@ -346,7 +347,6 @@ module.exports = RaolLatestX = async (RaolLatestX, m, chatUpdate, store) => {
             global.db.data.settings = settings;
 
             // Scheduler reset limit harian
-            const cron = require('node-cron');
             cron.schedule('00 00 * * *', () => {
                 let users = Object.keys(global.db.data.users);
                 for (let jid of users) {
@@ -584,13 +584,12 @@ module.exports = RaolLatestX = async (RaolLatestX, m, chatUpdate, store) => {
         }
 
         //================= { SWITCH CASE } =================\\
-        const caseHandler = require('../case/case');
         await caseHandler(RaolLatestX, m, command, args, isOwner, isCreator, isCmd, prefix, pushname, ftroli, fkontak, randomemoji, ucapanWaktu, pendaftar, budy);
 
     } catch (err) {
         const errId = `${global.ownNumb}@s.whatsapp.net`
         RaolLatestX.sendMessage(errId, {
-            text: require('util').format(err)
+            text: util.format(err)
         }, {
             quoted: m
         })
