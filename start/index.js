@@ -83,6 +83,7 @@ const {
     isUrl,
     generateMessageTag,
     getBuffer,
+    toBuffer,
     getSizeMedia,
     fetchJson,
     await,
@@ -591,7 +592,7 @@ async function RaolLatestXStart() {
         ...options
     })
     RaolLatestX.sendImage = async (jid, path, caption = '', quoted = '', options) => {
-        let buffer = Buffer.isBuffer(path) ? path : /^data:.*?\/.*?;base64,/i.test(path) ? Buffer.from(path.split`,` [1], 'base64') : /^https?:\/\//.test(path) ? await (await getBuffer(path)) : fs.existsSync(path) ? fs.readFileSync(path) : Buffer.alloc(0)
+        let buffer = await toBuffer(path)
         return await RaolLatestX.sendMessage(jid, {
             image: buffer,
             caption: caption,
@@ -601,7 +602,7 @@ async function RaolLatestXStart() {
         })
     }
     RaolLatestX.sendVideo = async (jid, path, caption = '', quoted = '', gif = false, options) => {
-        let buffer = Buffer.isBuffer(path) ? path : /^data:.*?\/.*?;base64,/i.test(path) ? Buffer.from(path.split`,` [1], 'base64') : /^https?:\/\//.test(path) ? await (await getBuffer(path)) : fs.existsSync(path) ? fs.readFileSync(path) : Buffer.alloc(0)
+        let buffer = await toBuffer(path)
         return await RaolLatestX.sendMessage(jid, {
             video: buffer,
             caption: caption,
@@ -612,7 +613,7 @@ async function RaolLatestXStart() {
         })
     }
     RaolLatestX.sendAudio = async (jid, path, quoted = '', ptt = false, options) => {
-        let buffer = Buffer.isBuffer(path) ? path : /^data:.*?\/.*?;base64,/i.test(path) ? Buffer.from(path.split`,` [1], 'base64') : /^https?:\/\//.test(path) ? await (await getBuffer(path)) : fs.existsSync(path) ? fs.readFileSync(path) : Buffer.alloc(0)
+        let buffer = await toBuffer(path)
         return await RaolLatestX.sendMessage(jid, {
             audio: buffer,
             ptt: ptt,
@@ -629,7 +630,7 @@ async function RaolLatestXStart() {
         quoted
     })
     RaolLatestX.sendImageAsSticker = async (jid, path, quoted, options = {}) => {
-        let buff = Buffer.isBuffer(path) ? path : /^data:.*?\/.*?;base64,/i.test(path) ? Buffer.from(path.split`,` [1], 'base64') : /^https?:\/\//.test(path) ? await (await getBuffer(path)) : fs.existsSync(path) ? fs.readFileSync(path) : Buffer.alloc(0)
+        let buff = await toBuffer(path)
         let buffer
         if (options && (options.packname || options.author)) {
             buffer = await writeExifImg(buff, options)
@@ -648,7 +649,7 @@ async function RaolLatestXStart() {
         return buffer
     }
     RaolLatestX.sendVideoAsSticker = async (jid, path, quoted, options = {}) => {
-        let buff = Buffer.isBuffer(path) ? path : /^data:.*?\/.*?;base64,/i.test(path) ? Buffer.from(path.split`,` [1], 'base64') : /^https?:\/\//.test(path) ? await (await getBuffer(path)) : fs.existsSync(path) ? fs.readFileSync(path) : Buffer.alloc(0)
+        let buff = await toBuffer(path)
         let buffer
         if (options && (options.packname || options.author)) {
             buffer = await writeExifVid(buff, options)
