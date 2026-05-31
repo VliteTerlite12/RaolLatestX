@@ -8,7 +8,7 @@ const premium = JSON.parse(fs.readFileSync('./start/lib/database/userPremium.jso
  * @param {String} expired 
  * @param {Object} _dir 
  */
-const addPremiumUser = (userId, expired, _dir) => {
+const addPremiumUser = async (userId, expired, _dir) => {
 	const cekUser = premium.find((user) => user.id == userId);
 	if (cekUser) {
 		cekUser.expired = cekUser.expired + toMs(expired);
@@ -16,7 +16,7 @@ const addPremiumUser = (userId, expired, _dir) => {
 		const obj = { id: userId, expired: Date.now() + toMs(expired) };
 		_dir.push(obj);
 	}
-	fs.writeFileSync("./start/lib/database/userPremium.json", JSON.stringify(_dir));
+	await fs.promises.writeFile("./start/lib/database/userPremium.json", JSON.stringify(_dir));
 };
 
 /**
@@ -76,7 +76,7 @@ const checkPremiumUser = (userId, _dir) => {
  * @param {Object} _dir 
  */
 const expiredCheck = (haruka, _dir) => {
-    setInterval(() => {
+    setInterval(async () => {
         let position = null
         Object.keys(_dir).forEach((i) => {
             if (Date.now() >= _dir[i].expired) {
@@ -88,7 +88,7 @@ const expiredCheck = (haruka, _dir) => {
             let txt = `Premium Expired, Terimakasih Sudah Berlangganan`
             haruka.sendMessage(_dir[position].id, { text: txt })
             _dir.splice(position, 1)
-            fs.writeFileSync('./start/lib/database/userPremium.json', JSON.stringify(_dir, null, 2))
+            await fs.promises.writeFile('./start/lib/database/userPremium.json', JSON.stringify(_dir, null, 2))
         }
     }, 1000)
 }
