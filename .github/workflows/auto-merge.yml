@@ -1,0 +1,68 @@
+name: Auto Merge PR + Delete Branch
+
+on:
+  # Trigger otomatis saat PR dibuka/diupdate
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+  # Trigger manual dari GitHub UI (untuk bulk merge PR yang sudah ada)
+  workflow_dispatch:
+
+jobs:
+  # ─── Job 1: Auto-merge PR baru (trigger dari pull_request event) ───
+  auto-merge-new:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.actor == 'VliteTerlite12'
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Merge + Delete Branch
+        run: |
+          gh pr merge "$PR_URL" \
+            --squash \
+            --auto \
+            --delete-branch
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ─── Job 2: Bulk merge semua open PR (trigger manual) ───
+  bulk-merge-all:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Merge semua open PR + hapus branch
+        run: |
+          REPO="${{ github.repository }}"
+
+          echo "🔍 Mengambil open PR dari $REPO..."
+
+          PR_NUMBERS=$(gh pr list \
+            --repo "$REPO" \
+            --state open \
+            --limit 100 \
+            --json number \
+            -q '.[].number')
+
+          if [ -z "$PR_NUMBERS" ]; then
+            echo "✅ Tidak ada open PR."
+            exit 0
+          fi
+
+          for PR in $PR_NUMBERS; do
+            echo "⏳ Merging PR #$PR..."
+            gh pr merge "$PR" \
+              --repo "$REPO" \
+              --squash \
+              --delete-branch \
+              --yes && echo "✅ PR #$PR merged" || echo "❌ PR #$PR gagal (conflict?)"
+            sleep 2
+          done
+
+          echo "🎉 Selesai!"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
