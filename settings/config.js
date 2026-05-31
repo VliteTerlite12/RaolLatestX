@@ -14,6 +14,7 @@ global.namabot = 'RaolLatestX';
 global.author = '';
 global.packname = '';
 global.yt = '';
+global.allowDeveloperTools = false;
 
 //================= { MASSAGE } =================\\
 global.mess = {

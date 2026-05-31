@@ -1,4 +1,5 @@
 const fs = require('fs');
+const vm = require('vm');
 const moment = require('moment-timezone');
 const chalk = require('chalk');
 const { randomBytes } = require('crypto');
@@ -86,26 +87,37 @@ case 'self': {
 //================= { WARNING } =================\\
         default:
             if (budy.startsWith('=>')) {
-                if (!isOwner) return;
-                function Return(sul) {
-                    sat = JSON.stringify(sul, null, 2);
-                    bang = util.format(sat);
-                    if (sat == undefined) {
-                        bang = util.format(sul);
-                    }
-                    return m.reply(bang);
-                }
+                if (!isOwner || !global.allowDeveloperTools) return;
                 try {
-                    m.reply(util.format(eval(`(async () => { return ${budy.slice(3)} })()`)));
+                    const sandbox = {
+                        RaolLatestX, m, command, args, isOwner, isCreator, isCmd, prefix, pushname, ftroli, fkontak, randomemoji, ucapanWaktu, pendaftar, budy,
+                        require, console, process, fs, moment, chalk, randomBytes, runtime, addCountCmd, getPosiCmdUser, util: require('util'),
+                        Return: (sul) => {
+                            let sat = JSON.stringify(sul, null, 2);
+                            let bang = require('util').format(sat);
+                            if (sat == undefined) {
+                                bang = require('util').format(sul);
+                            }
+                            return m.reply(bang);
+                        }
+                    };
+                    const script = new vm.Script(`(async () => { return ${budy.slice(3)} })()`);
+                    const result = await script.runInNewContext(sandbox);
+                    await m.reply(require('util').format(result));
                 } catch (e) {
-                    m.reply(String(e));
+                    await m.reply(String(e));
                 }
             }
 
             if (budy.startsWith('>')) {
-                if (!isOwner) return;
+                if (!isOwner || !global.allowDeveloperTools) return;
                 try {
-                    let evaled = await eval(budy.slice(2));
+                    const sandbox = {
+                        RaolLatestX, m, command, args, isOwner, isCreator, isCmd, prefix, pushname, ftroli, fkontak, randomemoji, ucapanWaktu, pendaftar, budy,
+                        require, console, process, fs, moment, chalk, randomBytes, runtime, addCountCmd, getPosiCmdUser, util: require('util')
+                    };
+                    const script = new vm.Script(budy.slice(2));
+                    let evaled = await script.runInNewContext(sandbox);
                     if (typeof evaled !== 'string') evaled = require('util').inspect(evaled);
                     await m.reply(evaled);
                 } catch (err) {
@@ -114,7 +126,7 @@ case 'self': {
             }
 
             if (budy.startsWith('$')) {
-                if (!isOwner) return;
+                if (!isOwner || !global.allowDeveloperTools) return;
                 require("child_process").exec(budy.slice(2), (err, stdout) => {
                     if (err) return m.reply(`${err}`);
                     if (stdout) return m.reply(stdout);
