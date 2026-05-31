@@ -172,6 +172,10 @@ exports.bytesToSize = (bytes, decimals = 2) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 };
 
+exports.toBuffer = async (path) => {
+    return Buffer.isBuffer(path) ? path : /^data:.*?\/.*?;base64,/i.test(path) ? Buffer.from(path.split`,` [1], 'base64') : /^https?:\/\//.test(path) ? await (await exports.getBuffer(path)) : fs.existsSync(path) ? fs.readFileSync(path) : Buffer.alloc(0)
+}
+
 exports.getSizeMedia = (path) => {
     return new Promise((resolve, reject) => {
         if (/http/.test(path)) {
