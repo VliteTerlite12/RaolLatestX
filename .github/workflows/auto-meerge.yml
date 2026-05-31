@@ -1,15 +1,13 @@
 name: Auto Merge PR + Delete Branch
 
 on:
-  # Trigger otomatis saat PR dibuka/diupdate
   pull_request:
     types: [opened, reopened, synchronize]
 
-  # Trigger manual dari GitHub UI (untuk bulk merge PR yang sudah ada)
   workflow_dispatch:
 
 jobs:
-  # ─── Job 1: Auto-merge PR baru (trigger dari pull_request event) ───
+  # ─── Auto-merge PR baru ───
   auto-merge-new:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' && github.actor == 'VliteTerlite12'
@@ -27,7 +25,7 @@ jobs:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # ─── Job 2: Bulk merge semua open PR (trigger manual) ───
+  # ─── Bulk merge semua open PR (trigger manual) ───
   bulk-merge-all:
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch'
@@ -59,7 +57,7 @@ jobs:
               --repo "$REPO" \
               --squash \
               --delete-branch \
-              --yes && echo "✅ PR #$PR merged" || echo "❌ PR #$PR gagal (conflict?)"
+            && echo "✅ PR #$PR merged" || echo "❌ PR #$PR gagal (conflict?)"
             sleep 2
           done
 
