@@ -454,13 +454,13 @@ async function RaolLatestXStart() {
     }
 
     RaolLatestX.sendContact = async (jid, kon, quoted = '', opts = {}) => {
-        let list = []
-        for (let i of kon) {
-            list.push({
-                displayName: await RaolLatestX.getName(i + '@s.whatsapp.net'),
-                vcard: `BEGIN:VCARD\nVERSION:3.0\nN:${await RaolLatestX.getName(i + '@s.whatsapp.net')}\nFN:${await RaolLatestX.getName(i + '@s.whatsapp.net')}\nitem1.TEL;waid=${i}:${i}\nitem1.X-ABLabel:Ponsel\nitem2.EMAIL;type=INTERNET:${email}\nitem2.X-ABLabel:Email\nitem3.URL:${myweb}\nitem3.X-ABLabel:${namaweb}\nitem4.ADR:;;${region};;;;\nitem4.X-ABLabel:Region\nEND:VCARD`
-            })
-        }
+        const list = await Promise.all(kon.map(async (i) => {
+            const name = await RaolLatestX.getName(i + '@s.whatsapp.net')
+            return {
+                displayName: name,
+                vcard: `BEGIN:VCARD\nVERSION:3.0\nN:${name}\nFN:${name}\nitem1.TEL;waid=${i}:${i}\nitem1.X-ABLabel:Ponsel\nitem2.EMAIL;type=INTERNET:${email}\nitem2.X-ABLabel:Email\nitem3.URL:${myweb}\nitem3.X-ABLabel:${namaweb}\nitem4.ADR:;;${region};;;;\nitem4.X-ABLabel:Region\nEND:VCARD`
+            }
+        }))
         RaolLatestX.sendMessage(jid, {
             contacts: {
                 displayName: `${list.length} Kontak`,
