@@ -24,6 +24,7 @@ require('../src/discord');
 */
 //================= { LIBRARY } =================\\
 const fs = require('fs');
+const crypto = require('crypto');
 const pino = require('pino');
 const path = require('path');
 const axios = require('axios');
@@ -165,16 +166,73 @@ const loginInfoPath = path.join(__dirname, '../loginInfo.json');
 let usePairingCode = false;
 
 //================= { HELPER FUNCTIONS } =================\\
+const ENCRYPTION_ALGORITHM = 'aes-256-cbc';
+const IV_LENGTH = 16;
+
+function getEncryptionKey() {
+    const key = process.env.LOGIN_CACHE_KEY || 'default-secret-key-32-chars-long!!';
+    return crypto.createHash('sha256').update(key).digest();
+}
+
+function encrypt(text) {
+    const iv = crypto.randomBytes(IV_LENGTH);
+    const cipher = crypto.createCipheriv(ENCRYPTION_ALGORITHM, getEncryptionKey(), iv);
+    let encrypted = cipher.update(text);
+    encrypted = Buffer.concat([encrypted, cipher.final()]);
+    return iv.toString('hex') + ':' + encrypted.toString('hex');
+}
+
+function decrypt(text) {
+    try {
+        const textParts = text.split(':');
+        const iv = Buffer.from(textParts.shift(), 'hex');
+        const encryptedText = Buffer.from(textParts.join(':'), 'hex');
+        const decipher = crypto.createDecipheriv(ENCRYPTION_ALGORITHM, getEncryptionKey(), iv);
+        let decrypted = decipher.update(encryptedText);
+        decrypted = Buffer.concat([decrypted, decipher.final()]);
+        return decrypted.toString();
+    } catch (error) {
+        return null;
+    }
+}
+
 function saveLoginInfo(username, password, usePairingCode) {
     const loginInfo = { username, password, usePairingCode };
-    fs.writeFileSync(loginInfoPath, JSON.stringify(loginInfo));
+    const encryptedData = encrypt(JSON.stringify(loginInfo));
+    fs.writeFileSync(loginInfoPath, encryptedData, { mode: 0o600 });
 }
 
 function getSavedLoginInfo() {
     if (fs.existsSync(loginInfoPath)) {
-        const loginInfo = JSON.parse(fs.readFileSync(loginInfoPath));
-        usePairingCode = loginInfo.usePairingCode;
-        return loginInfo;
+        const fileContent = fs.readFileSync(loginInfoPath, 'utf8');
+        let loginInfo;
+
+        const decrypted = decrypt(fileContent);
+        if (decrypted) {
+            try {
+                loginInfo = JSON.parse(decrypted);
+            } catch (e) {
+                // Fallback if decryption returns something non-JSON
+            }
+        }
+
+        // Migration: Check if it's plaintext JSON
+        if (!loginInfo) {
+            try {
+                loginInfo = JSON.parse(fileContent);
+                // If we successfully parsed plaintext, re-save it encrypted
+                if (loginInfo && loginInfo.username && loginInfo.password) {
+                    saveLoginInfo(loginInfo.username, loginInfo.password, loginInfo.usePairingCode);
+                }
+            } catch (e) {
+                // Not plaintext JSON either
+            }
+        }
+
+        if (loginInfo) {
+            usePairingCode = loginInfo.usePairingCode;
+            return loginInfo;
+        }
     }
     return null;
 }
