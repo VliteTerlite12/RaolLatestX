@@ -50,16 +50,6 @@ async function toAudio(buffer, ext) {
   ], ext, 'mp3');
 }
 
-async function toPTT(buffer, ext) {
-  return ffmpeg(buffer, [
-    '-vn',
-    '-c:a', 'libopus',
-    '-b:a', '128k',
-    '-vbr', 'on',
-    '-compression_level', '10'
-  ], ext, 'opus');
-}
-
 async function toVideo(buffer, ext) {
   return ffmpeg(buffer, [
     '-c:v', 'libx264',
@@ -73,7 +63,6 @@ async function toVideo(buffer, ext) {
 
 module.exports = {
   toAudio,
-  toPTT,
   toVideo,
   ffmpeg
 };
